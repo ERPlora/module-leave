@@ -7,6 +7,10 @@ urlpatterns = [
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
+    # Navigation tab aliases
+    path('requests/', views.leave_types_list, name='requests'),
+
+
     # LeaveType
     path('leave_types/', views.leave_types_list, name='leave_types_list'),
     path('leave_types/add/', views.leave_type_add, name='leave_type_add'),
