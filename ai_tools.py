@@ -76,3 +76,101 @@ class GetPendingLeaveRequests(AssistantTool):
             ],
             "total": pending.count(),
         }
+
+
+@register_tool
+class ListLeaveTypes(AssistantTool):
+    name = "list_leave_types"
+    description = "List available leave types with annual allowance."
+    module_id = "leave"
+    required_permission = "leave.view_leaverequest"
+    parameters = {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
+
+    def execute(self, args, request):
+        from leave.models import LeaveType
+        types = LeaveType.objects.filter(is_active=True)
+        return {"leave_types": [{"id": str(t.id), "name": t.name, "days_per_year": t.days_per_year, "is_paid": t.is_paid} for t in types]}
+
+
+@register_tool
+class CreateLeaveRequest(AssistantTool):
+    name = "create_leave_request"
+    description = "Create a new leave request for an employee."
+    module_id = "leave"
+    required_permission = "leave.change_leaverequest"
+    requires_confirmation = True
+    parameters = {
+        "type": "object",
+        "properties": {
+            "employee_id": {"type": "string", "description": "Employee UUID"},
+            "employee_name": {"type": "string", "description": "Employee name"},
+            "leave_type_id": {"type": "string", "description": "Leave type ID"},
+            "start_date": {"type": "string", "description": "Start date (YYYY-MM-DD)"},
+            "end_date": {"type": "string", "description": "End date (YYYY-MM-DD)"},
+            "reason": {"type": "string", "description": "Reason for leave"},
+        },
+        "required": ["employee_name", "leave_type_id", "start_date", "end_date"],
+        "additionalProperties": False,
+    }
+
+    def execute(self, args, request):
+        from leave.models import LeaveRequest
+        lr = LeaveRequest.objects.create(
+            employee_id=args.get('employee_id', ''),
+            employee_name=args['employee_name'],
+            leave_type_id=args['leave_type_id'],
+            start_date=args['start_date'],
+            end_date=args['end_date'],
+            reason=args.get('reason', ''),
+            status='pending',
+        )
+        return {"id": str(lr.id), "employee_name": lr.employee_name, "status": "pending", "created": True}
+
+
+@register_tool
+class ApproveLeaveRequest(AssistantTool):
+    name = "approve_leave_request"
+    description = "Approve a pending leave request."
+    module_id = "leave"
+    required_permission = "leave.change_leaverequest"
+    requires_confirmation = True
+    parameters = {
+        "type": "object",
+        "properties": {"request_id": {"type": "string", "description": "Leave request ID"}},
+        "required": ["request_id"],
+        "additionalProperties": False,
+    }
+
+    def execute(self, args, request):
+        from leave.models import LeaveRequest
+        lr = LeaveRequest.objects.get(id=args['request_id'])
+        if lr.status != 'pending':
+            return {"error": f"Request is already {lr.status}"}
+        lr.status = 'approved'
+        lr.approved_by = request.session.get('local_user_id')
+        lr.save(update_fields=['status', 'approved_by'])
+        return {"id": str(lr.id), "employee_name": lr.employee_name, "status": "approved"}
+
+
+@register_tool
+class RejectLeaveRequest(AssistantTool):
+    name = "reject_leave_request"
+    description = "Reject a pending leave request."
+    module_id = "leave"
+    required_permission = "leave.change_leaverequest"
+    requires_confirmation = True
+    parameters = {
+        "type": "object",
+        "properties": {"request_id": {"type": "string", "description": "Leave request ID"}},
+        "required": ["request_id"],
+        "additionalProperties": False,
+    }
+
+    def execute(self, args, request):
+        from leave.models import LeaveRequest
+        lr = LeaveRequest.objects.get(id=args['request_id'])
+        if lr.status != 'pending':
+            return {"error": f"Request is already {lr.status}"}
+        lr.status = 'rejected'
+        lr.save(update_fields=['status'])
+        return {"id": str(lr.id), "employee_name": lr.employee_name, "status": "rejected"}
