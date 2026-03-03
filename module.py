@@ -29,3 +29,17 @@ PERMISSIONS = [
 'leave.approve_leaverequest',
 'leave.manage_settings',
 ]
+
+ROLE_PERMISSIONS = {
+    "admin": ["*"],
+    "manager": [
+        "add_leaverequest",
+        "approve_leaverequest",
+        "change_leaverequest",
+        "view_leaverequest",
+    ],
+    "employee": [
+        "add_leaverequest",
+        "view_leaverequest",
+    ],
+}
