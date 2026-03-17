@@ -174,3 +174,62 @@ class RejectLeaveRequest(AssistantTool):
         lr.status = 'rejected'
         lr.save(update_fields=['status'])
         return {"id": str(lr.id), "employee_name": lr.employee_name, "status": "rejected"}
+
+
+@register_tool
+class UpdateLeaveRequest(AssistantTool):
+    name = "update_leave_request"
+    description = "Update a leave request's dates, reason, or status."
+    module_id = "leave"
+    required_permission = "leave.change_leaverequest"
+    requires_confirmation = True
+    parameters = {
+        "type": "object",
+        "properties": {
+            "request_id": {"type": "string"},
+            "start_date": {"type": "string"}, "end_date": {"type": "string"},
+            "reason": {"type": "string"},
+            "status": {"type": "string", "description": "pending, approved, rejected, cancelled"},
+            "leave_type_id": {"type": "string"},
+        },
+        "required": ["request_id"],
+        "additionalProperties": False,
+    }
+
+    def execute(self, args, request):
+        from leave.models import LeaveRequest
+        try:
+            lr = LeaveRequest.objects.get(id=args['request_id'])
+        except LeaveRequest.DoesNotExist:
+            return {"error": "Leave request not found"}
+        for field in ('start_date', 'end_date', 'reason', 'status'):
+            if field in args:
+                setattr(lr, field, args[field])
+        if 'leave_type_id' in args:
+            lr.leave_type_id = args['leave_type_id']
+        lr.save()
+        return {"id": str(lr.id), "employee_name": lr.employee_name, "status": lr.status, "updated": True}
+
+
+@register_tool
+class DeleteLeaveRequest(AssistantTool):
+    name = "delete_leave_request"
+    description = "Delete a leave request by ID."
+    module_id = "leave"
+    required_permission = "leave.delete_leaverequest"
+    requires_confirmation = True
+    parameters = {
+        "type": "object",
+        "properties": {"request_id": {"type": "string"}},
+        "required": ["request_id"],
+        "additionalProperties": False,
+    }
+
+    def execute(self, args, request):
+        from leave.models import LeaveRequest
+        try:
+            lr = LeaveRequest.objects.get(id=args['request_id'])
+        except LeaveRequest.DoesNotExist:
+            return {"error": "Leave request not found"}
+        lr.delete()
+        return {"deleted": True}
