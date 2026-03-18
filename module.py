@@ -2,8 +2,8 @@ from django.utils.translation import gettext_lazy as _
 
 MODULE_ID = 'leave'
 MODULE_NAME = _('Leave Management')
-MODULE_VERSION = '1.0.0'
-MODULE_ICON = 'calendar-clear-outline'
+MODULE_VERSION = '1.0.1'
+MODULE_ICON = 'material:event_available'
 MODULE_DESCRIPTION = _('Employee leave requests and approvals')
 MODULE_AUTHOR = 'ERPlora'
 MODULE_CATEGORY = 'hr'
