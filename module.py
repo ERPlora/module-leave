@@ -7,6 +7,7 @@ MODULE_ICON = 'material:event_available'
 MODULE_DESCRIPTION = _('Employee leave requests and approvals')
 MODULE_AUTHOR = 'ERPlora'
 MODULE_CATEGORY = 'hr'
+HAS_MODELS = True
 
 MENU = {
     'label': _('Leave Management'),
