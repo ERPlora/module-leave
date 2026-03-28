@@ -44,3 +44,11 @@ ROLE_PERMISSIONS = {
         "view_leaverequest",
     ],
 }
+
+SCHEDULED_TASKS = [
+    {
+        'task': 'leave.reset_annual_quotas',
+        'cron': '0 0 1 1 *',
+        'description': 'Reset annual leave balances at start of year',
+    },
+]
